@@ -2,6 +2,12 @@
 
 Plateforme privée de révision dédiée à quatre matières : Marchés publics, GDPR / RGPD, Loi du CTIE et TOGAF.
 
+## Site déployé
+
+**https://jiujiu.github.io/ctie-qcm/**
+
+> Utiliser l'URL racine ci-dessus afin de conserver l'interface complète avec connexion Supabase, sauvegarde cloud et accès à la progression.
+
 ## Sécurité
 
 - authentification Supabase obligatoire par lien magique ;
