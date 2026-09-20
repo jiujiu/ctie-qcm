@@ -1,50 +1,36 @@
 # CTIE QCM
 
-Plateforme de révision inspirée de **jiujiu/inap-qcm**, dédiée à quatre matières :
+Plateforme privée de révision dédiée à quatre matières : Marchés publics, GDPR / RGPD, Loi du CTIE et TOGAF.
 
-- Marchés publics
-- GDPR / RGPD
-- Loi du CTIE
-- TOGAF
+## Sécurité
 
-## Fonctionnalités conservées
+- authentification Supabase obligatoire par lien magique ;
+- liste blanche d'adresses e-mail dans `allowed_users` ;
+- les banques de questions sont stockées dans `quiz_questions` et protégées par RLS ;
+- aucun fichier JSON de questions n'est publié par GitHub Pages ;
+- `quiz.html`, `dashboard.html` et `erreurs.html` vérifient une session authentifiée et autorisée ;
+- progression et erreurs sont stockées dans Supabase et ne sont lisibles que par leur propriétaire autorisé ;
+- la clé `sb_publishable_...` est volontairement publique : elle identifie le projet mais ne contourne pas Auth/RLS ;
+- aucune clé `service_role` ou `sb_secret` n'est présente dans le navigateur.
 
-- connexion Supabase par lien magique ;
-- sauvegarde locale et synchronisation cloud des résultats ;
-- tableau de bord **Ma progression** ;
-- page **Mes erreurs** avec la question, la réponse donnée, la bonne réponse et l'explication ;
-- entraînement matière par matière avec correction immédiate.
+## Fonctionnalités
 
-## Fonctionnalités volontairement absentes pour le moment
+- entraînement matière par matière avec correction immédiate ;
+- progression cloud ;
+- historique des erreurs ;
+- aucun test mélangé ni mode examen chronométré pour le moment.
 
-- aucun test mélangeant les quatre matières ;
-- aucun test de 80 questions ;
-- aucun mode examen chronométré.
+## Banques actuellement migrées
 
-## Banques de questions
+- GDPR / RGPD : 149 questions
+- Loi du CTIE : 110 questions
+- TOGAF : 192 questions
+- Marchés publics : banque à compléter
 
-Les quatre fichiers JSON sont volontairement initialisés vides. Ils seront alimentés à partir des documents de référence fournis ultérieurement.
+Total actuel : 451 questions.
 
-Format attendu :
+## Autoriser un autre utilisateur
 
-```json
-{
-  "subject": "GDPR",
-  "questions": [
-    {
-      "id": 1,
-      "concept": "GDPR-001",
-      "question": "Question…",
-      "answers": ["A", "B", "C", "D"],
-      "correct": 1,
-      "explanation": "Explication sourcée…"
-    }
-  ]
-}
-```
+Ajouter son adresse e-mail dans la table `public.allowed_users`. Une authentification Supabase valide seule ne suffit pas : l'adresse doit aussi être autorisée.
 
-## Supabase
-
-La configuration Supabase reprend celle de `inap-qcm` et utilise la table `quiz_results`. Les nouvelles matières sont distinguées via le champ `scope`.
-
-> Si les politiques RLS de la table `quiz_results` limitent les valeurs de `scope`, il faudra les adapter pour accepter `MARCHES`, `GDPR`, `LOI_CTIE` et `TOGAF`.
+Les politiques RLS contrôlent ensuite l'accès à `quiz_questions`, `quiz_results` et `quiz_errors`.
