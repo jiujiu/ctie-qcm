@@ -24,7 +24,6 @@ Plateforme privée de révision dédiée à quatre matières : Marchés publics,
 - entraînement matière par matière avec correction immédiate ;
 - progression cloud ;
 - historique des erreurs ;
-- aucun test mélangé ni mode examen chronométré pour le moment.
 
 ## Autoriser un autre utilisateur
 
