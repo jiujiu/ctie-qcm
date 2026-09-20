@@ -3,20 +3,18 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f5f7fb;color:#18212f}body{display:flex;flex-direction:column}.nav{min-height:58px;display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#111827;color:#fff;box-shadow:0 2px 10px #0002;gap:10px}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.actions button{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:9px;padding:9px 12px;cursor:pointer}.status{font-size:12px;color:#d1d5db}.authbox{display:flex;gap:6px}.authbox input{width:210px;padding:8px;border-radius:8px;border:0}.hidden{display:none!important}iframe{border:0;width:100%;flex:1}.toast{position:fixed;right:18px;bottom:18px;background:#111827;color:#fff;padding:12px 16px;border-radius:10px;opacity:0;transition:.2s}.toast.show{opacity:1}@media(max-width:760px){.nav{flex-direction:column;align-items:stretch}.actions{display:grid;grid-template-columns:1fr 1fr}.actions .status,.authbox{grid-column:1/-1}.authbox input{flex:1;width:auto}}</style></head>
 <body><div class="nav"><b>CTIE – QCM d'entraînement</b><div class="actions"><span id="cloudStatus" class="status">Cloud : non connecté</span><div id="loginBox" class="authbox"><input id="email" type="email" placeholder="ton@email.com"><button onclick="sendMagicLink()">Connexion</button></div><button id="logoutBtn" class="hidden" onclick="logout()">Déconnexion</button><button onclick="newTest()">Nouveau test</button><button onclick="location.href='dashboard.html'">Ma progression</button><button onclick="location.href='erreurs.html'">Mes erreurs</button></div></div>
-<iframe id="quizFrame" src="quiz.html" title="Quiz CTIE"></iframe><div id="toast" class="toast"></div>
+<div id="locked" style="flex:1;display:flex;align-items:center;justify-content:center;padding:30px"><div style="max-width:520px;text-align:center"><h1>Accès sécurisé</h1><p>Connecte-toi avec une adresse e-mail autorisée pour accéder aux QCM, à ta progression et à tes erreurs.</p></div></div><iframe id="quizFrame" class="hidden" title="Quiz CTIE"></iframe><div id="toast" class="toast"></div>
 <script>
-const SUPABASE_URL='https://ltjpusvagvxvzqtwrnat.supabase.co',SUPABASE_KEY='sb_publishable_PFvxiUzbxH-3hwabCZdnpA_N03eidiP',sb=window.supabase?.createClient(SUPABASE_URL,SUPABASE_KEY),KEY='ctieHistoryV1';
-const frame=document.getElementById('quizFrame');let currentUser=null,lastHandledDate=null;
+const SUPABASE_URL='https://ltjpusvagvxvzqtwrnat.supabase.co',SUPABASE_KEY='sb_publishable_PFvxiUzbxH-3hwabCZdnpA_N03eidiP',sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const frame=document.getElementById('quizFrame');const locked=document.getElementById('locked');let currentUser=null;
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500)}
-function getLocal(){try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(x)?x:[]}catch{return[]}}
-function setLocal(x){localStorage.setItem(KEY,JSON.stringify(x))}
-function newTest(){frame.src='quiz.html?'+Date.now()}
-async function refreshAuth(){try{currentUser=(await sb.auth.getUser()).data?.user||null}catch{currentUser=null}loginBox.classList.toggle('hidden',!!currentUser);logoutBtn.classList.toggle('hidden',!currentUser);cloudStatus.textContent=currentUser?'Cloud : '+currentUser.email:'Cloud : non connecté';if(currentUser)syncLocal()}
+function setAccess(ok){frame.classList.toggle('hidden',!ok);locked.classList.toggle('hidden',ok);if(ok&&!frame.src)frame.src='quiz.html'}
+async function refreshAuth(){const {data:{user}}=await sb.auth.getUser();currentUser=user||null;if(currentUser){const {data:allowed}=await sb.rpc('is_allowed_user');if(allowed!==true){await sb.auth.signOut();currentUser=null;toast('Cette adresse e-mail n’est pas autorisée.')}}loginBox.classList.toggle('hidden',!!currentUser);logoutBtn.classList.toggle('hidden',!currentUser);cloudStatus.textContent=currentUser?'Connecté : '+currentUser.email:'Non connecté';setAccess(!!currentUser)}
 async function sendMagicLink(){const e=email.value.trim();if(!e)return toast('Entre ton adresse email.');const {error}=await sb.auth.signInWithOtp({email:e,options:{emailRedirectTo:location.origin+location.pathname}});toast(error?'Erreur : '+error.message:'Lien de connexion envoyé par email.')}
-async function logout(){await sb.auth.signOut();refreshAuth()}
-function row(x){return{created_at:x.date,user_id:currentUser.id,mode:x.mode,scope:x.scope,score:x.score,total:x.total,percent:x.percent,breakdown:x.breakdown||'',by_subject:x.by||{}}}
-async function push(x){if(!currentUser)return false;const {error}=await sb.from('quiz_results').insert(row(x));return !error}
-async function syncLocal(){for(const x of getLocal().filter(x=>!x.cloud_synced)){if(await push(x)){x.cloud_synced=true;setLocal(getLocal().map(y=>y.date===x.date?x:y))}}}
-window.addEventListener('message',async e=>{if(e.data?.type!=='CTIE_QUIZ_FINISHED')return;const x=e.data.session;if(!x||x.date===lastHandledDate)return;lastHandledDate=x.date;if(currentUser&&await push(x)){const h=getLocal();const y=h.find(v=>v.date===x.date);if(y)y.cloud_synced=true;setLocal(h);toast('Résultat sauvegardé localement et dans le cloud ✓')}else toast('Résultat sauvegardé localement.')});
+async function logout(){await sb.auth.signOut();frame.removeAttribute('src');await refreshAuth()}
+function newTest(){if(!currentUser)return toast('Connexion requise.');frame.src='quiz.html?'+Date.now()}
+function protectedPage(p){if(!currentUser)return toast('Connexion requise.');location.href=p}
+document.querySelector('button[onclick="location.href=\'dashboard.html\'"]').setAttribute('onclick',"protectedPage('dashboard.html')");
+document.querySelector('button[onclick="location.href=\'erreurs.html\'"]').setAttribute('onclick',"protectedPage('erreurs.html')");
 sb.auth.onAuthStateChange(()=>setTimeout(refreshAuth,0));refreshAuth();
 </script></body></html>
