@@ -20,15 +20,6 @@ Plateforme privée de révision dédiée à quatre matières : Marchés publics,
 - historique des erreurs ;
 - aucun test mélangé ni mode examen chronométré pour le moment.
 
-## Banques actuellement migrées
-
-- GDPR / RGPD : 149 questions
-- Loi du CTIE : 110 questions
-- TOGAF : 192 questions
-- Marchés publics : banque à compléter
-
-Total actuel : 451 questions.
-
 ## Autoriser un autre utilisateur
 
 Ajouter son adresse e-mail dans la table `public.allowed_users`. Une authentification Supabase valide seule ne suffit pas : l'adresse doit aussi être autorisée.
